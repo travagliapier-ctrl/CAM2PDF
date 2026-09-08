@@ -25,6 +25,9 @@ jobs:
           channel: 'stable'
           cache: true
 
+      - name: Configure Flutter
+        run: flutter config --no-analytics
+
       - name: Ensure Android platform exists
         run: flutter create . --platforms=android
 
