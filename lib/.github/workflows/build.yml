@@ -31,8 +31,12 @@ jobs:
       - name: Install Dependencies
         run: flutter pub get
 
-      - name: Build APK (Debug)
-        run: flutter build apk --debug
+      - name: Clean Gradle cache & Build APK
+        run: |
+          cd android
+          ./gradlew clean
+          cd ..
+          flutter build apk --debug --verbose
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
