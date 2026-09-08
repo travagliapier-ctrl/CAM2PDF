@@ -1,0 +1,27 @@
+name: cam2pdf
+description: "App professionale per rilievi fotografici e generazione PDF per geometri e ingegneri."
+publish_to: "none"
+version: 1.0.0+1
+
+environment:
+  sdk: ">=3.0.0 <4.0.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  camera: ^0.10.5+9
+  path_provider: ^2.1.2
+  pdf: ^3.10.8
+  printing: ^5.11.1
+  geolocator: ^10.1.0
+  geocoding: ^3.0.0
+  image_picker: ^1.0.7
+  share_plus: ^7.2.1
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^3.0.0
+
+flutter:
+  uses-material-design: true
