@@ -34,12 +34,11 @@ jobs:
           if [ -d "lib" ]; then cp -r lib /tmp/backup_project/; fi
           if [ -f "pubspec.yaml" ]; then cp pubspec.yaml /tmp/backup_project/; fi
           
-          # Ripulisce completamente la cartella del workspace
-          rm -rf * .git* .github/workflows/*.yml 2>/dev/null || true
-          # Nota: lasciamo in vita solo la cartella del workflow corrente o rigeneriamo da zero
+          # Ripulisce la cartella escludendo i file di workflow
+          find . -maxdepth 1 ! -name '.' ! -name '..' ! -name '.git' ! -name '.github' -exec rm -rf {} +
           
-          # Crea un progetto Flutter nuovissimo, pulito e con Gradle aggiornato
-          flutter create . --org com.cam2pdf --project-name cam2pdf --offline || flutter create . --org com.cam2pdf --project-name cam2pdf
+          # Crea un progetto Flutter nuovissimo e pulito con Gradle aggiornato
+          flutter create . --org com.cam2pdf --project-name cam2pdf
           
           # Ripristina il codice sorgente dell'utente
           if [ -d "/tmp/backup_project/lib" ]; then
@@ -53,42 +52,30 @@ jobs:
           python3 -c "
           from PIL import Image, ImageDraw
           
-          # Icona dark con accenti rossi (stile PDF) in alta definizione
           img = Image.new('RGBA', (1024, 1024), (18, 20, 26, 255))
           draw = ImageDraw.Draw(img)
           
-          # Documento centrale (sfondo chiaro pulito con bordo rosso in alto)
           draw.rectangle([312, 230, 712, 794], fill=(240, 242, 245, 255))
-          draw.rectangle([312, 230, 712, 310], fill=(217, 48, 37, 255)) # Striscia rossa PDF
+          draw.rectangle([312, 230, 712, 310], fill=(217, 48, 37, 255))
           
-          # Testo fittizio sul documento (righe grigie)
           draw.rectangle([372, 370, 652, 394], fill=(200, 205, 215, 255))
           draw.rectangle([372, 450, 652, 474], fill=(200, 205, 215, 255))
           draw.rectangle([372, 530, 532, 554], fill=(200, 205, 215, 255))
           
-          # Etichetta PDF in evidenza
           draw.rectangle([372, 620, 480, 680], fill=(217, 48, 37, 255))
-          
-          # Obiettivo fotocamera minimale in basso a destra sul documento
           draw.ellipse([570, 590, 672, 692], outline=(30, 35, 45, 255), width=12)
           draw.ellipse([600, 620, 642, 662], fill=(217, 48, 37, 255))
           
           img.save('app_icon.png')
           "
 
-          # Configura le dipendenze per l'icona nel nuovo pubspec.yaml
           python3 -c "
           with open('pubspec.yaml', 'r') as f:
               content = f.read()
           
           if 'flutter_launcher_icons' not in content:
-              content += '\ndev_dependencies:\n  flutter_launcher_icons: ^0.13.1\n'
-              content += '''
-flutter_icons:
-  android: true
-  ios: true
-  image_path: \"app_icon.png\"
-'''
+              addition = '\ndev_dependencies:\n  flutter_launcher_icons: ^0.13.1\n\nflutter_icons:\n  android: true\n  ios: true\n  image_path: \"app_icon.png\"\n'
+              content += addition
               with open('pubspec.yaml', 'w') as f:
                   f.write(content)
           "
