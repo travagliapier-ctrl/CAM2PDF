@@ -26,11 +26,17 @@ jobs:
           echo "/home/runner/flutter/bin" >> $GITHUB_PATH
           /home/runner/flutter/bin/flutter --version
 
+      - name: Accept Android Licenses
+        run: yes | /home/runner/flutter/bin/flutter doctor --android-licenses
+
+      - name: Run Flutter Doctor
+        run: /home/runner/flutter/bin/flutter doctor -v
+
       - name: Install Dependencies
         run: /home/runner/flutter/bin/flutter pub get
 
       - name: Build APK (Debug)
-        run: /home/runner/flutter/bin/flutter build apk --debug
+        run: /home/runner/flutter/bin/flutter build apk --debug -v
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
