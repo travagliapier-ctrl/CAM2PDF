@@ -25,47 +25,26 @@ jobs:
           channel: 'stable'
           cache: true
 
-      - name: Fix pubspec.yaml & Clean Package Name
-        run: |
-          python3 -c "
-          import re
-          
-          with open('pubspec.yaml', 'r', encoding='utf-8') as f:
-              content = f.read()
-          
-          # 1. Forza il nome in minuscolo
-          content = re.sub(r'(?i)^[ \t]*name[ \t]*:[ \t]*.*$', 'name: cam2pdf', content, flags=re.MULTILINE)
-          
-          # 2. Rimuove vecchie configurazioni duplicate di flutter_icons o dev_dependencies anomale
-          content = re.sub(r'\n[ \t]*flutter_icons:.*?(?=\n[a-zA-Z]|\Z)', '', content, flags=re.DOTALL)
-          
-          # 3. Aggiunge in modo pulito le dipendenze e la configurazione icone se non ci sono già
-          if 'flutter_launcher_icons' not in content:
-              if 'dev_dependencies:' in content:
-                  # Se esiste già dev_dependencies, accoda il pacchetto sotto di esso
-                  content = content.replace('dev_dependencies:', 'dev_dependencies:\n  flutter_launcher_icons: ^0.13.1')
-              else:
-                  # Altrimenti lo aggiunge in fondo
-                  content += '\ndev_dependencies:\n  flutter_launcher_icons: ^0.13.1\n'
-              
-              content += '''
-flutter_icons:
-  android: true
-  ios: true
-  image_path: \"app_icon.png\"
-'''
-
-          with open('pubspec.yaml', 'w', encoding='utf-8') as f:
-              f.write(content)
-              
-          print('--- PUBSPEC.YAML PULITO E CORRETTO ---')
-          print(content)
-          "
-
-      - name: Ensure Android platform exists
+      - name: Fresh Clean & Rebuild Flutter Project Structure
         run: |
           flutter config --no-analytics
-          flutter create . --platforms=android --org com.cam2pdf --project-name cam2pdf
+          
+          # Salva temporaneamente il codice sorgente (la cartella lib se esiste)
+          if [ -d "lib" ]; then
+            cp -r lib /tmp/my_lib
+          fi
+          
+          # Pulisce tutto il superfluo che genera conflitti
+          rm -rf android ios web linux macos windows build .dart_tool
+          
+          # Rigenera il progetto da zero con il nome corretto e minuscolo
+          flutter create . --org com.cam2pdf --project-name cam2pdf
+          
+          # Ripristina il codice sorgente salvato prima
+          if [ -d "/tmp/my_lib" ]; then
+            rm -rf lib
+            cp -r /tmp/my_lib lib
+          fi
 
       - name: Generate Apple-style Dark & Red PDF Icon
         run: |
@@ -94,6 +73,23 @@ flutter_icons:
           draw.ellipse([600, 620, 642, 662], fill=(217, 48, 37, 255))
           
           img.save('app_icon.png')
+          "
+
+          # Configura le dipendenze per l'icona nel pubspec.yaml rigenerato
+          python3 -c "
+          with open('pubspec.yaml', 'r') as f:
+              content = f.read()
+          
+          if 'flutter_launcher_icons' not in content:
+              content += '\ndev_dependencies:\n  flutter_launcher_icons: ^0.13.1\n'
+              content += '''
+flutter_icons:
+  android: true
+  ios: true
+  image_path: \"app_icon.png\"
+'''
+              with open('pubspec.yaml', 'w') as f:
+                  f.write(content)
           "
 
       - name: Accept Android Licenses
