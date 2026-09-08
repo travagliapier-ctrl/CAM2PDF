@@ -29,12 +29,12 @@ jobs:
         run: |
           flutter config --no-analytics
           
-          # Salva la cartella del codice sorgente e il pubspec se esiste
+          # Salva la cartella del codice sorgente se esiste
           mkdir -p /tmp/backup_project
           if [ -d "lib" ]; then cp -r lib /tmp/backup_project/; fi
           if [ -f "pubspec.yaml" ]; then cp pubspec.yaml /tmp/backup_project/; fi
           
-          # Ripulisce la cartella escludendo i file di workflow
+          # Ripulisce la cartella escludendo i file di workflow e git
           find . -maxdepth 1 ! -name '.' ! -name '..' ! -name '.git' ! -name '.github' -exec rm -rf {} +
           
           # Crea un progetto Flutter nuovissimo e pulito con Gradle aggiornato
@@ -73,11 +73,19 @@ jobs:
           with open('pubspec.yaml', 'r') as f:
               content = f.read()
           
+          # Aggiunge il pacchetto alle dev_dependencies esistenti o le crea
           if 'flutter_launcher_icons' not in content:
-              addition = '\ndev_dependencies:\n  flutter_launcher_icons: ^0.13.1\n\nflutter_icons:\n  android: true\n  ios: true\n  image_path: \"app_icon.png\"\n'
-              content += addition
-              with open('pubspec.yaml', 'w') as f:
-                  f.write(content)
+              if 'dev_dependencies:' in content:
+                  content = content.replace('dev_dependencies:', 'dev_dependencies:\n  flutter_launcher_icons: ^0.13.1')
+              else:
+                  content += '\ndev_dependencies:\n  flutter_launcher_icons: ^0.13.1\n'
+          
+          # Aggiunge la configurazione flutter_icons se non è già presente
+          if 'flutter_icons:' not in content:
+              content += '\nflutter_icons:\n  android: true\n  ios: true\n  image_path: \"app_icon.png\"\n'
+              
+          with open('pubspec.yaml', 'w') as f:
+              f.write(content)
           "
 
       - name: Accept Android Licenses
