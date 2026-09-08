@@ -25,8 +25,11 @@ jobs:
           channel: 'stable'
           cache: true
 
-      - name: Configure Flutter
-        run: flutter config --no-analytics
+      - name: Configure Flutter & Fix Package Name
+        run: |
+          flutter config --no-analytics
+          # Forza il nome in minuscolo nel pubspec.yaml per evitare errori di Dart
+          sed -i 's/^name:.*/name: cam2pdf/' pubspec.yaml
 
       - name: Ensure Android platform exists
         run: flutter create . --platforms=android
