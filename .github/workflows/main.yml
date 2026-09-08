@@ -16,14 +16,13 @@ jobs:
           git clone https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git .
           git checkout ${{ github.ref_name }}
 
-      - name: Install Java 17 and Android SDK manually
+      - name: Set up Java 17 and Android SDK manually
         run: |
           sudo apt-get update
           sudo apt-get install -y openjdk-17-jdk wget unzip
           export JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64
           echo "JAVA_HOME=$JAVA_HOME" >> $GITHUB_ENV
 
-          # Scarica e configura Android Command Line Tools
           mkdir -p /home/runner/android/sdk/cmdline-tools/latest
           wget -q https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip -O /tmp/cmdtools.zip
           unzip -q /tmp/cmdtools.zip -d /tmp/cmdtools
@@ -35,7 +34,6 @@ jobs:
           echo "$ANDROID_HOME/cmdline-tools/latest/bin" >> $GITHUB_PATH
           echo "$ANDROID_HOME/platform-tools" >> $GITHUB_PATH
 
-          # Accetta le licenze Android in modo massiccio
           yes | /home/runner/android/sdk/cmdline-tools/latest/bin/sdkmanager --licenses || true
           /home/runner/android/sdk/cmdline-tools/latest/bin/sdkmanager "platform-tools" "platforms;android-34" "build-tools;34.0.0"
 
@@ -52,7 +50,7 @@ jobs:
         run: flutter pub get
 
       - name: Build APK (Debug)
-        run: flutter build apk --debug
+        run: flutter build apk --debug --verbose
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
