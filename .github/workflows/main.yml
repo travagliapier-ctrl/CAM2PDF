@@ -27,21 +27,14 @@ jobs:
 
       - name: Force lowercase package name in pubspec.yaml
         run: |
-          python3 -c "
-          with open('pubspec.yaml', 'r') as f:
-              lines = f.readlines()
+          echo "Contenuto originale di pubspec.yaml:"
+          head -n 5 pubspec.yaml
           
-          new_lines = []
-          for line in lines:
-              if line.strip().startswith('name:'):
-                  new_lines.append('name: cam2pdf\n')
-                  print(f'Corretto nome pacchetto da: {line.strip()} a: name: cam2pdf')
-              else:
-                  new_lines.append(line)
-                  
-          with open('pubspec.yaml', 'w') as f:
-              f.writelines(new_lines)
-          "
+          # Sostituisce brutalmente qualsiasi riga che inizi per name: con name: cam2pdf
+          sed -i 's/^[nN][aA][mM][eE][[:space:]]*:.*/name: cam2pdf/g' pubspec.yaml
+          
+          echo "Contenuto dopo la correzione:"
+          head -n 5 pubspec.yaml
 
       - name: Ensure Android platform exists
         run: flutter create . --platforms=android
@@ -75,7 +68,7 @@ jobs:
           img.save('app_icon.png')
           "
 
-          # Aggiunta configurazione icone a fine pubspec.yaml senza dipendere da PyYAML
+          # Aggiunta configurazione icone a fine pubspec.yaml
           python3 -c "
           with open('pubspec.yaml', 'r') as f:
               content = f.read()
