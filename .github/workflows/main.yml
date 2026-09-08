@@ -10,10 +10,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Set up Java
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           distribution: 'zulu'
           java-version: '17'
@@ -73,14 +73,12 @@ jobs:
           with open('pubspec.yaml', 'r') as f:
               content = f.read()
           
-          # Aggiunge il pacchetto alle dev_dependencies esistenti o le crea
           if 'flutter_launcher_icons' not in content:
               if 'dev_dependencies:' in content:
                   content = content.replace('dev_dependencies:', 'dev_dependencies:\n  flutter_launcher_icons: ^0.13.1')
               else:
                   content += '\ndev_dependencies:\n  flutter_launcher_icons: ^0.13.1\n'
           
-          # Aggiunge la configurazione flutter_icons se non è già presente
           if 'flutter_icons:' not in content:
               content += '\nflutter_icons:\n  android: true\n  ios: true\n  image_path: \"app_icon.png\"\n'
               
@@ -100,7 +98,7 @@ jobs:
         run: flutter build apk --debug --verbose
 
       - name: Upload APK artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: cam2pdf-debug-apk
           path: build/app/outputs/flutter-apk/app-debug.apk
