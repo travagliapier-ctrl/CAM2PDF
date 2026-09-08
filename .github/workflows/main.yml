@@ -12,6 +12,31 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Fix pubspec.yaml package name immediately
+        run: |
+          echo "=== PRIMA DELLA MODIFICA ==="
+          cat pubspec.yaml
+          
+          # Creiamo un pubspec.yaml pulito o modifichiamo la riga name
+          python3 -c "
+          with open('pubspec.yaml', 'r', encoding='utf-8') as f:
+              content = f.read()
+          
+          lines = content.splitlines()
+          new_lines = []
+          for line in lines:
+              if line.strip().startswith('name:'):
+                  new_lines.append('name: cam2pdf')
+              else:
+                  new_lines.append(line)
+                  
+          with open('pubspec.yaml', 'w', encoding='utf-8') as f:
+              f.write('\n'.join(new_lines) + '\n')
+          "
+          
+          echo "=== DOPO LA MODIFICA ==="
+          cat pubspec.yaml
+
       - name: Set up Java
         uses: actions/setup-java@v4
         with:
@@ -25,17 +50,6 @@ jobs:
           channel: 'stable'
           cache: true
 
-      - name: Force lowercase package name in pubspec.yaml
-        run: |
-          echo "Contenuto originale di pubspec.yaml:"
-          head -n 5 pubspec.yaml
-          
-          # Sostituisce brutalmente qualsiasi riga che inizi per name: con name: cam2pdf
-          sed -i 's/^[nN][aA][mM][eE][[:space:]]*:.*/name: cam2pdf/g' pubspec.yaml
-          
-          echo "Contenuto dopo la correzione:"
-          head -n 5 pubspec.yaml
-
       - name: Ensure Android platform exists
         run: flutter create . --platforms=android
 
@@ -45,30 +59,23 @@ jobs:
           python3 -c "
           from PIL import Image, ImageDraw
           
-          # Icona dark con accenti rossi (stile PDF)
           img = Image.new('RGBA', (1024, 1024), (18, 20, 26, 255))
           draw = ImageDraw.Draw(img)
           
-          # Documento centrale (sfondo chiaro pulito con bordo rosso in alto)
           draw.rectangle([312, 230, 712, 794], fill=(240, 242, 245, 255))
-          draw.rectangle([312, 230, 712, 310], fill=(217, 48, 37, 255)) # Striscia rossa PDF
+          draw.rectangle([312, 230, 712, 310], fill=(217, 48, 37, 255))
           
-          # Testo fittizio sul documento (righe grigie)
           draw.rectangle([372, 370, 652, 394], fill=(200, 205, 215, 255))
           draw.rectangle([372, 450, 652, 474], fill=(200, 205, 215, 255))
           draw.rectangle([372, 530, 532, 554], fill=(200, 205, 215, 255))
           
-          # Etichetta PDF in evidenza
           draw.rectangle([372, 620, 480, 680], fill=(217, 48, 37, 255))
-          
-          # Obiettivo fotocamera minimale in basso a destra sul documento
           draw.ellipse([570, 590, 672, 692], outline=(30, 35, 45, 255), width=12)
           draw.ellipse([600, 620, 642, 662], fill=(217, 48, 37, 255))
           
           img.save('app_icon.png')
           "
 
-          # Aggiunta configurazione icone a fine pubspec.yaml
           python3 -c "
           with open('pubspec.yaml', 'r') as f:
               content = f.read()
