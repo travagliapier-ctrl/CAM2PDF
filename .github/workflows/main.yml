@@ -22,15 +22,15 @@ jobs:
 
       - name: Install Flutter Manually
         run: |
-          git clone https://github.com/flutter/flutter.git --depth 1 -b stable ~/flutter
-          echo "$HOME/flutter/bin" >> $GITHUB_PATH
-          flutter doctor
+          git clone https://github.com/flutter/flutter.git --depth 1 -b stable /home/runner/flutter
+          echo "/home/runner/flutter/bin" >> $GITHUB_PATH
+          /home/runner/flutter/bin/flutter --version
 
       - name: Install Dependencies
-        run: flutter pub get
+        run: /home/runner/flutter/bin/flutter pub get
 
       - name: Build APK (Debug)
-        run: flutter build apk --debug
+        run: /home/runner/flutter/bin/flutter build apk --debug
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
