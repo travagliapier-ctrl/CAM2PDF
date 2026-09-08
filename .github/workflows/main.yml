@@ -25,25 +25,26 @@ jobs:
           channel: 'stable'
           cache: true
 
-      - name: Fresh Clean & Rebuild Flutter Project Structure
+      - name: Scaffolding a fresh, modern Flutter project
         run: |
           flutter config --no-analytics
           
-          # Salva temporaneamente il codice sorgente (la cartella lib se esiste)
-          if [ -d "lib" ]; then
-            cp -r lib /tmp/my_lib
-          fi
+          # Salva la cartella del codice sorgente e il pubspec se esiste
+          mkdir -p /tmp/backup_project
+          if [ -d "lib" ]; then cp -r lib /tmp/backup_project/; fi
+          if [ -f "pubspec.yaml" ]; then cp pubspec.yaml /tmp/backup_project/; fi
           
-          # Pulisce tutto il superfluo che genera conflitti
-          rm -rf android ios web linux macos windows build .dart_tool
+          # Ripulisce completamente la cartella del workspace
+          rm -rf * .git* .github/workflows/*.yml 2>/dev/null || true
+          # Nota: lasciamo in vita solo la cartella del workflow corrente o rigeneriamo da zero
           
-          # Rigenera il progetto da zero con il nome corretto e minuscolo
-          flutter create . --org com.cam2pdf --project-name cam2pdf
+          # Crea un progetto Flutter nuovissimo, pulito e con Gradle aggiornato
+          flutter create . --org com.cam2pdf --project-name cam2pdf --offline || flutter create . --org com.cam2pdf --project-name cam2pdf
           
-          # Ripristina il codice sorgente salvato prima
-          if [ -d "/tmp/my_lib" ]; then
+          # Ripristina il codice sorgente dell'utente
+          if [ -d "/tmp/backup_project/lib" ]; then
             rm -rf lib
-            cp -r /tmp/my_lib lib
+            cp -r /tmp/backup_project/lib .
           fi
 
       - name: Generate Apple-style Dark & Red PDF Icon
@@ -75,7 +76,7 @@ jobs:
           img.save('app_icon.png')
           "
 
-          # Configura le dipendenze per l'icona nel pubspec.yaml rigenerato
+          # Configura le dipendenze per l'icona nel nuovo pubspec.yaml
           python3 -c "
           with open('pubspec.yaml', 'r') as f:
               content = f.read()
