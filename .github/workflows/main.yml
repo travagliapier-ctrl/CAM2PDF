@@ -25,11 +25,21 @@ jobs:
           channel: 'stable'
           cache: true
 
-      - name: Configure Flutter & Fix Package Name
+      - name: Configure Flutter & Force Lowercase Package Name
         run: |
           flutter config --no-analytics
-          # Forza il nome in minuscolo nel pubspec.yaml per evitare errori di Dart
-          sed -i 's/^name:.*/name: cam2pdf/' pubspec.yaml
+          # Riscrive la prima riga del nome nel pubspec.yaml forzando cam2pdf
+          python3 -c "
+          with open('pubspec.yaml', 'r') as f:
+              lines = f.readlines()
+          with open('pubspec.yaml', 'w') as f:
+              for line in lines:
+                  if line.strip().startswith('name:'):
+                      f.write('name: cam2pdf\n')
+                  else:
+                      f.write(line)
+          "
+          cat pubspec.yaml | head -n 5
 
       - name: Ensure Android platform exists
         run: flutter create . --platforms=android
