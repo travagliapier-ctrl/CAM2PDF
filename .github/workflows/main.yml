@@ -1,50 +1,35 @@
 name: Build Android APK
 
 on:
-  workflow_dispatch:
   push:
-    branches:
-      - main
-      - master
+    branches: [ main, master ]
+  workflow_dispatch:
 
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - name: Clone repository
-        run: |
-          git clone https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git .
-          git checkout ${{ github.ref_name }}
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-      - name: Set up Java 17 and Android SDK manually
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y openjdk-17-jdk wget unzip
-          export JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64
-          echo "JAVA_HOME=$JAVA_HOME" >> $GITHUB_ENV
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'zulu'
+          java-version: '17'
 
-          mkdir -p /home/runner/android/sdk/cmdline-tools/latest
-          wget -q https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip -O /tmp/cmdtools.zip
-          unzip -q /tmp/cmdtools.zip -d /tmp/cmdtools
-          mv /tmp/cmdtools/cmdline-tools/* /home/runner/android/sdk/cmdline-tools/latest/
-          rm /tmp/cmdtools.zip
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.19.x'
+          channel: 'stable'
+          cache: true
 
-          export ANDROID_HOME=/home/runner/android/sdk
-          echo "ANDROID_HOME=$ANDROID_HOME" >> $GITHUB_ENV
-          echo "$ANDROID_HOME/cmdline-tools/latest/bin" >> $GITHUB_PATH
-          echo "$ANDROID_HOME/platform-tools" >> $GITHUB_PATH
+      - name: Ensure Android platform exists
+        run: flutter create . --platforms=android
 
-          yes | /home/runner/android/sdk/cmdline-tools/latest/bin/sdkmanager --licenses || true
-          /home/runner/android/sdk/cmdline-tools/latest/bin/sdkmanager "platform-tools" "platforms;android-34" "build-tools;34.0.0"
-
-      - name: Install Flutter
-        run: |
-          git clone https://github.com/flutter/flutter.git --depth 1 -b stable /home/runner/flutter
-          echo "/home/runner/flutter/bin" >> $GITHUB_PATH
-
-      - name: Configure Flutter Android SDK
-        run: |
-          /home/runner/flutter/bin/flutter config --android-sdk /home/runner/android/sdk
+      - name: Accept Android Licenses
+        run: yes | flutter doctor --android-licenses
 
       - name: Install Dependencies
         run: flutter pub get
