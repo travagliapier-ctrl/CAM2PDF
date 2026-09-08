@@ -12,27 +12,6 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Force Fix Package Name & Project Identity
-        run: |
-          echo "--- STAMPA DEBUG PUBSPEC ORIGINALE ---"
-          cat pubspec.yaml
-          
-          # Corregge brutalmente qualsiasi maiuscola nel nome nel file pubspec.yaml
-          python3 -c "
-          import re
-          with open('pubspec.yaml', 'r', encoding='utf-8') as f:
-              content = f.read()
-          
-          # Sostituisce name: CAM2PDF o simili con name: cam2pdf
-          new_content = re.sub(r'(?i)^[ \t]*name[ \t]*:[ \t]*.*$', 'name: cam2pdf', content, flags=re.MULTILINE)
-          
-          with open('pubspec.yaml', 'w', encoding='utf-8') as f:
-              f.write(new_content)
-          "
-          
-          echo "--- STAMPA DEBUG PUBSPEC CORRETTO ---"
-          cat pubspec.yaml
-
       - name: Set up Java
         uses: actions/setup-java@v4
         with:
@@ -46,10 +25,46 @@ jobs:
           channel: 'stable'
           cache: true
 
+      - name: Fix pubspec.yaml & Clean Package Name
+        run: |
+          python3 -c "
+          import re
+          
+          with open('pubspec.yaml', 'r', encoding='utf-8') as f:
+              content = f.read()
+          
+          # 1. Forza il nome in minuscolo
+          content = re.sub(r'(?i)^[ \t]*name[ \t]*:[ \t]*.*$', 'name: cam2pdf', content, flags=re.MULTILINE)
+          
+          # 2. Rimuove vecchie configurazioni duplicate di flutter_icons o dev_dependencies anomale
+          content = re.sub(r'\n[ \t]*flutter_icons:.*?(?=\n[a-zA-Z]|\Z)', '', content, flags=re.DOTALL)
+          
+          # 3. Aggiunge in modo pulito le dipendenze e la configurazione icone se non ci sono già
+          if 'flutter_launcher_icons' not in content:
+              if 'dev_dependencies:' in content:
+                  # Se esiste già dev_dependencies, accoda il pacchetto sotto di esso
+                  content = content.replace('dev_dependencies:', 'dev_dependencies:\n  flutter_launcher_icons: ^0.13.1')
+              else:
+                  # Altrimenti lo aggiunge in fondo
+                  content += '\ndev_dependencies:\n  flutter_launcher_icons: ^0.13.1\n'
+              
+              content += '''
+flutter_icons:
+  android: true
+  ios: true
+  image_path: \"app_icon.png\"
+'''
+
+          with open('pubspec.yaml', 'w', encoding='utf-8') as f:
+              f.write(content)
+              
+          print('--- PUBSPEC.YAML PULITO E CORRETTO ---')
+          print(content)
+          "
+
       - name: Ensure Android platform exists
         run: |
           flutter config --no-analytics
-          # Pulisce eventuali residui e ricrea la struttura android forzando il nome corretto
           flutter create . --platforms=android --org com.cam2pdf --project-name cam2pdf
 
       - name: Generate Apple-style Dark & Red PDF Icon
@@ -79,16 +94,6 @@ jobs:
           draw.ellipse([600, 620, 642, 662], fill=(217, 48, 37, 255))
           
           img.save('app_icon.png')
-          "
-
-          # Aggiunta configurazione icone a fine pubspec.yaml
-          python3 -c "
-          with open('pubspec.yaml', 'r') as f:
-              content = f.read()
-          if 'flutter_launcher_icons:' not in content:
-              content += '\n\ndev_dependencies:\n  flutter_launcher_icons: ^0.13.1\n\nflutter_icons:\n  android: true\n  ios: true\n  image_path: \"app_icon.png\"\n'
-              with open('pubspec.yaml', 'w', encoding='utf-8') as f:
-                  f.write(content)
           "
 
       - name: Accept Android Licenses
