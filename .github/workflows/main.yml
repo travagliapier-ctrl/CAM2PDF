@@ -25,22 +25,22 @@ jobs:
           channel: 'stable'
           cache: true
 
-      - name: Fix Package Name in pubspec.yaml
+      - name: Force lowercase package name in pubspec.yaml
         run: |
           python3 -c "
-          import yaml
-
           with open('pubspec.yaml', 'r') as f:
-              data = yaml.safe_load(f)
-
-          data['name'] = 'cam2pdf'
-
+              lines = f.readlines()
+          
+          new_lines = []
+          for line in lines:
+              if line.strip().startswith('name:'):
+                  new_lines.append('name: cam2pdf\n')
+                  print(f'Corretto nome pacchetto da: {line.strip()} a: name: cam2pdf')
+              else:
+                  new_lines.append(line)
+                  
           with open('pubspec.yaml', 'w') as f:
-              yaml.dump(data, f, sort_keys=False)
-
-          print('pubspec.yaml aggiornato con successo:')
-          with open('pubspec.yaml', 'r') as f:
-              print(f.read())
+              f.writelines(new_lines)
           "
 
       - name: Ensure Android platform exists
@@ -74,21 +74,15 @@ jobs:
           
           img.save('app_icon.png')
           "
-          
+
+          # Aggiunta configurazione icone a fine pubspec.yaml senza dipendere da PyYAML
           python3 -c "
-          import yaml
           with open('pubspec.yaml', 'r') as f:
-              data = yaml.safe_load(f)
-          if not data.get('dev_dependencies'):
-              data['dev_dependencies'] = {}
-          data['dev_dependencies']['flutter_launcher_icons'] = '^0.13.1'
-          data['flutter_icons'] = {
-              'android': True,
-              'ios': True,
-              'image_path': 'app_icon.png'
-          }
-          with open('pubspec.yaml', 'w') as f:
-              yaml.dump(data, f, sort_keys=False)
+              content = f.read()
+          if 'flutter_launcher_icons:' not in content:
+              content += '\n\ndev_dependencies:\n  flutter_launcher_icons: ^0.13.1\n\nflutter_icons:\n  android: true\n  ios: true\n  image_path: \"app_icon.png\"\n'
+              with open('pubspec.yaml', 'w') as f:
+                  f.write(content)
           "
 
       - name: Accept Android Licenses
