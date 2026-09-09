@@ -46,7 +46,7 @@ jobs:
             cp -r /tmp/backup_project/lib .
           fi
 
-      - name: Generate Apple-style Dark & Red PDF Icon
+      - name: Inject Android Permissions & Generate Icon
         run: |
           pip install Pillow
           python3 -c "
@@ -57,11 +57,9 @@ jobs:
           
           draw.rectangle([312, 230, 712, 794], fill=(240, 242, 245, 255))
           draw.rectangle([312, 230, 712, 310], fill=(217, 48, 37, 255))
-          
           draw.rectangle([372, 370, 652, 394], fill=(200, 205, 215, 255))
           draw.rectangle([372, 450, 652, 474], fill=(200, 205, 215, 255))
           draw.rectangle([372, 530, 532, 554], fill=(200, 205, 215, 255))
-          
           draw.rectangle([372, 620, 480, 680], fill=(217, 48, 37, 255))
           draw.ellipse([570, 590, 672, 692], outline=(30, 35, 45, 255), width=12)
           draw.ellipse([600, 620, 642, 662], fill=(217, 48, 37, 255))
@@ -70,6 +68,7 @@ jobs:
           "
 
           python3 -c "
+          # Aggiunge dipendenze nel pubspec.yaml
           with open('pubspec.yaml', 'r') as f:
               content = f.read()
           
@@ -84,6 +83,23 @@ jobs:
               
           with open('pubspec.yaml', 'w') as f:
               f.write(content)
+
+          # Inietta i permessi della fotocamera nell'AndroidManifest.xml
+          manifest_path = 'android/app/src/main/AndroidManifest.xml'
+          with open(manifest_path, 'r') as f:
+              manifest = f.read()
+          
+          permissions = '''
+              <uses-permission android:name=\"android.permission.CAMERA\" />
+              <uses-permission android:name=\"android.permission.READ_EXTERNAL_STORAGE\" android:maxSdkVersion=\"32\" />
+              <uses-permission android:name=\"android.permission.WRITE_EXTERNAL_STORAGE\" android:maxSdkVersion=\"32\" />
+              <uses-permission android:name=\"android.permission.READ_MEDIA_IMAGES\" />
+          '''
+          
+          if 'android.permission.CAMERA' not in manifest:
+              manifest = manifest.replace('<application', permissions + '\n    <application')
+              with open(manifest_path, 'w') as f:
+                  f.write(manifest)
           "
 
       - name: Accept Android Licenses
